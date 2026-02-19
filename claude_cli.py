@@ -30,7 +30,7 @@ class ClaudeCLI:
         if mode == Mode.SAFE:
             cmd += ["--allowedTools", "Read,LS,Glob,Grep"]
         elif mode == Mode.WRITE:
-            cmd += ["--allowedTools", "Read,Write,Edit,Bash,LS,Glob,Grep"]
+            cmd += ["--allowedTools", "Read,Write,Edit,LS,Glob,Grep"]
         elif mode == Mode.FULL:
             cmd.append("--dangerously-skip-permissions")
 

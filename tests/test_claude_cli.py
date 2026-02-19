@@ -25,7 +25,8 @@ def test_build_command_write_mode():
     cli = ClaudeCLI(work_dir="/tmp/test")
     cmd = cli.build_command(mode=Mode.WRITE, session_id=None)
     assert "--allowedTools" in cmd
-    assert "Read,Write,Edit,Bash,LS,Glob,Grep" in cmd
+    assert "Read,Write,Edit,LS,Glob,Grep" in cmd
+    assert "Bash" not in cmd
 
 
 def test_build_command_full_mode():
@@ -179,7 +180,8 @@ def test_build_command_write_mode_with_session():
     cli = ClaudeCLI(work_dir="/tmp/test")
     cmd = cli.build_command(mode=Mode.WRITE, session_id="sess-abc")
     assert "--allowedTools" in cmd
-    assert "Read,Write,Edit,Bash,LS,Glob,Grep" in cmd
+    assert "Read,Write,Edit,LS,Glob,Grep" in cmd
+    assert "Bash" not in cmd
     assert "--resume" in cmd
     assert "sess-abc" in cmd
 

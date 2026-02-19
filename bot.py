@@ -57,7 +57,7 @@ async def cmd_start(message: Message) -> None:
         "Команды:\n"
         "/new — новая сессия\n"
         "/safe — режим только чтение\n"
-        "/write — режим запись (Write + Edit + Delete)\n"
+        "/write — режим запись (Write + Edit)\n"
         "/full — полный доступ\n"
         "/status — текущий статус"
     )
@@ -81,7 +81,7 @@ async def cmd_safe(message: Message) -> None:
 async def cmd_write(message: Message) -> None:
     global current_mode
     current_mode = Mode.WRITE
-    await message.answer("Режим: запись (Write + Edit + Delete в рабочей папке)")
+    await message.answer("Режим: запись (Write + Edit в рабочей папке)")
 
 
 @dp.message(Command("full"))
@@ -142,7 +142,7 @@ async def main() -> None:
     await bot.set_my_commands([
         BotCommand(command="new", description="Новая сессия"),
         BotCommand(command="safe", description="Режим: только чтение"),
-        BotCommand(command="write", description="Режим: запись (Write + Edit + Delete)"),
+        BotCommand(command="write", description="Режим: запись (Write + Edit)"),
         BotCommand(command="full", description="Режим: полный доступ"),
         BotCommand(command="status", description="Текущий статус"),
     ])
