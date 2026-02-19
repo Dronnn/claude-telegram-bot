@@ -33,7 +33,7 @@ Claude Code runs in your terminal. You step away from your desk. Now you can't u
 **1. Clone and create virtual environment:**
 
 ```bash
-git clone https://github.com/yourusername/claude-telegram-bot.git
+git clone <your-repo-url>
 cd claude-telegram-bot
 python3 -m venv .venv
 source .venv/bin/activate

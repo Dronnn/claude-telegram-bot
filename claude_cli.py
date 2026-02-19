@@ -28,7 +28,7 @@ class ClaudeCLI:
         cmd = ["claude", "-p", "--output-format", "json"]
 
         if mode == Mode.WRITE:
-            cmd += ["--allowedTools", "Write", "Edit"]
+            cmd += ["--allowedTools", "Write,Edit"]
         elif mode == Mode.FULL:
             cmd.append("--dangerously-skip-permissions")
 
@@ -58,7 +58,7 @@ class ClaudeCLI:
 
             # Single object: {"result": "...", "session_id": "..."}
             if isinstance(data, dict):
-                return data.get("result", ""), data.get("session_id")
+                return data.get("result") or "", data.get("session_id")
 
             # Array of objects: find the "result" entry
             if isinstance(data, list):
@@ -68,7 +68,7 @@ class ClaudeCLI:
                     if not isinstance(item, dict):
                         continue
                     if item.get("type") == "result":
-                        result_text = item.get("result", "")
+                        result_text = item.get("result") or ""
                         session_id = item.get("session_id")
                         break
                     if "session_id" in item and not session_id:

@@ -1,3 +1,4 @@
+import asyncio
 import json
 from unittest.mock import AsyncMock, patch
 
@@ -22,8 +23,7 @@ def test_build_command_write_mode():
     cli = ClaudeCLI(work_dir="/tmp/test")
     cmd = cli.build_command(mode=Mode.WRITE, session_id=None)
     assert "--allowedTools" in cmd
-    assert "Write" in cmd
-    assert "Edit" in cmd
+    assert "Write,Edit" in cmd
 
 
 def test_build_command_full_mode():
@@ -149,3 +149,42 @@ async def test_run_returns_text_from_json_list():
         assert session_id == "s-list"
         assert stats["cost_usd"] == 0.02
         assert stats["num_turns"] == 1
+
+
+@pytest.mark.asyncio
+async def test_execute_timeout_kills_process():
+    cli = ClaudeCLI(work_dir="/tmp/test")
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+        mock_proc = AsyncMock()
+        mock_proc.communicate = AsyncMock(side_effect=asyncio.TimeoutError)
+        mock_proc.kill = AsyncMock()
+        mock_exec.return_value = mock_proc
+        with pytest.raises(asyncio.TimeoutError):
+            await cli._execute(["claude", "-p"], stdin_data="test", timeout=1)
+        mock_proc.kill.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_run_returns_stderr_on_empty_stdout():
+    cli = ClaudeCLI(work_dir="/tmp/test")
+    with patch.object(cli, "_execute", new_callable=AsyncMock, return_value=("", "something went wrong")):
+        text, session_id, stats = await cli.run("hello", mode=Mode.SAFE)
+        assert "something went wrong" in text
+        assert stats == {}
+
+
+def test_build_command_write_mode_with_session():
+    cli = ClaudeCLI(work_dir="/tmp/test")
+    cmd = cli.build_command(mode=Mode.WRITE, session_id="sess-abc")
+    assert "--allowedTools" in cmd
+    assert "Write,Edit" in cmd
+    assert "--resume" in cmd
+    assert "sess-abc" in cmd
+
+
+def test_parse_response_null_result():
+    cli = ClaudeCLI(work_dir="/tmp/test")
+    raw = json.dumps({"result": None, "session_id": "s-1"})
+    text, session_id = cli.parse_response(raw)
+    assert text == ""
+    assert session_id == "s-1"

@@ -1,4 +1,5 @@
-# bot.py
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
@@ -29,7 +30,6 @@ dp = Dispatcher()
 # State
 current_mode = Mode.SAFE
 current_session: Optional[str] = None
-
 
 
 class AuthMiddleware(BaseMiddleware):
@@ -95,7 +95,6 @@ async def cmd_full(message: Message) -> None:
     )
 
 
-
 @dp.message(Command("status"))
 async def cmd_status(message: Message) -> None:
     session_display = current_session[:12] + "..." if current_session else "нет"
@@ -117,16 +116,25 @@ async def handle_message(message: Message) -> None:
         text, session_id, _stats = await cli.run(message.text, current_mode, current_session)
         if session_id:
             current_session = session_id
-        await waiting.delete()
+        try:
+            await waiting.delete()
+        except Exception:
+            pass
         if not text.strip():
             text = "(empty response)"
         for part in split_message(text):
             await message.answer(part)
     except asyncio.TimeoutError:
-        await waiting.edit_text("Timeout: CLI did not respond within 5 minutes.")
+        try:
+            await waiting.edit_text("Timeout: CLI did not respond within 5 minutes.")
+        except Exception:
+            pass
     except Exception as e:
         logging.exception("CLI error")
-        await waiting.edit_text(f"Error: {e}")
+        try:
+            await waiting.edit_text(f"Error: {e}")
+        except Exception:
+            pass
 
 
 async def main() -> None:
