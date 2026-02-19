@@ -10,13 +10,11 @@ logger = logging.getLogger(__name__)
 class Mode(Enum):
     SAFE = "safe"
     WRITE = "write"
-    FULL = "full"
 
 
 MODE_LABELS = {
     Mode.SAFE: "Только чтение",
     Mode.WRITE: "Запись (Write + Edit)",
-    Mode.FULL: "Полный доступ",
 }
 
 
@@ -31,8 +29,6 @@ class ClaudeCLI:
             cmd += ["--allowedTools", "Read,LS,Glob,Grep"]
         elif mode == Mode.WRITE:
             cmd += ["--allowedTools", "Read,Write,Edit,LS,Glob,Grep"]
-        elif mode == Mode.FULL:
-            cmd.append("--dangerously-skip-permissions")
 
         if session_id:
             cmd += ["--resume", session_id]

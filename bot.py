@@ -9,7 +9,7 @@ from typing import Any, Optional
 from aiogram import BaseMiddleware, Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
-from aiogram.types import BotCommand, Message, TelegramObject
+from aiogram.types import BotCommand, Message, TelegramObject, Update
 from dotenv import load_dotenv
 
 from claude_cli import ClaudeCLI, Mode, MODE_LABELS
@@ -39,14 +39,23 @@ class AuthMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        user = getattr(event, "from_user", None)
+        # At Update level (outer middleware): extract user from whichever field is set
+        if isinstance(event, Update):
+            inner = (
+                event.message or event.edited_message
+                or event.channel_post or event.edited_channel_post
+                or event.callback_query or event.inline_query
+            )
+            user = getattr(inner, "from_user", None) if inner else None
+        else:
+            user = getattr(event, "from_user", None)
         if user is None or user.id != ALLOWED_USER_ID:
             return  # Silently ignore
         return await handler(event, data)
 
 
-dp.message.middleware(AuthMiddleware())
-dp.callback_query.middleware(AuthMiddleware())
+# Global: intercepts ALL update types before any handler
+dp.update.outer_middleware(AuthMiddleware())
 
 
 @dp.message(Command("start"))
@@ -58,7 +67,6 @@ async def cmd_start(message: Message) -> None:
         "/new — новая сессия\n"
         "/safe — режим только чтение\n"
         "/write — режим запись (Write + Edit)\n"
-        "/full — полный доступ\n"
         "/status — текущий статус"
     )
 
@@ -83,16 +91,6 @@ async def cmd_write(message: Message) -> None:
     current_mode = Mode.WRITE
     await message.answer("Режим: запись (Write + Edit в рабочей папке)")
 
-
-@dp.message(Command("full"))
-async def cmd_full(message: Message) -> None:
-    global current_mode
-    current_mode = Mode.FULL
-    await message.answer(
-        "Режим: ПОЛНЫЙ ДОСТУП\n"
-        "CLI может выполнять любые команды на всём компьютере.\n"
-        "Используйте /safe или /write чтобы вернуться."
-    )
 
 
 @dp.message(Command("status"))
@@ -143,7 +141,6 @@ async def main() -> None:
         BotCommand(command="new", description="Новая сессия"),
         BotCommand(command="safe", description="Режим: только чтение"),
         BotCommand(command="write", description="Режим: запись (Write + Edit)"),
-        BotCommand(command="full", description="Режим: полный доступ"),
         BotCommand(command="status", description="Текущий статус"),
     ])
     await dp.start_polling(bot)

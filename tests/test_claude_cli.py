@@ -10,7 +10,7 @@ from claude_cli import ClaudeCLI, Mode
 def test_mode_enum():
     assert Mode.SAFE.value == "safe"
     assert Mode.WRITE.value == "write"
-    assert Mode.FULL.value == "full"
+    assert not hasattr(Mode, "FULL")
 
 
 def test_build_command_safe_no_session():
@@ -28,11 +28,6 @@ def test_build_command_write_mode():
     assert "Read,Write,Edit,LS,Glob,Grep" in cmd
     assert "Bash" not in cmd
 
-
-def test_build_command_full_mode():
-    cli = ClaudeCLI(work_dir="/tmp/test")
-    cmd = cli.build_command(mode=Mode.FULL, session_id=None)
-    assert "--dangerously-skip-permissions" in cmd
 
 
 def test_build_command_with_session():
