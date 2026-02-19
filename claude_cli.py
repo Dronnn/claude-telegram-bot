@@ -27,8 +27,10 @@ class ClaudeCLI:
     def build_command(self, mode: Mode, session_id: Optional[str] = None) -> List[str]:
         cmd = ["claude", "-p", "--output-format", "json"]
 
-        if mode == Mode.WRITE:
-            cmd += ["--allowedTools", "Write,Edit"]
+        if mode == Mode.SAFE:
+            cmd += ["--allowedTools", "Read,LS,Glob,Grep"]
+        elif mode == Mode.WRITE:
+            cmd += ["--allowedTools", "Read,Write,Edit,Bash,LS,Glob,Grep"]
         elif mode == Mode.FULL:
             cmd.append("--dangerously-skip-permissions")
 

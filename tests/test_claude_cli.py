@@ -16,14 +16,16 @@ def test_mode_enum():
 def test_build_command_safe_no_session():
     cli = ClaudeCLI(work_dir="/tmp/test")
     cmd = cli.build_command(mode=Mode.SAFE, session_id=None)
-    assert cmd == ["claude", "-p", "--output-format", "json"]
+    assert "--allowedTools" in cmd
+    assert "Read,LS,Glob,Grep" in cmd
+    assert "--dangerously-skip-permissions" not in cmd
 
 
 def test_build_command_write_mode():
     cli = ClaudeCLI(work_dir="/tmp/test")
     cmd = cli.build_command(mode=Mode.WRITE, session_id=None)
     assert "--allowedTools" in cmd
-    assert "Write,Edit" in cmd
+    assert "Read,Write,Edit,Bash,LS,Glob,Grep" in cmd
 
 
 def test_build_command_full_mode():
@@ -177,7 +179,7 @@ def test_build_command_write_mode_with_session():
     cli = ClaudeCLI(work_dir="/tmp/test")
     cmd = cli.build_command(mode=Mode.WRITE, session_id="sess-abc")
     assert "--allowedTools" in cmd
-    assert "Write,Edit" in cmd
+    assert "Read,Write,Edit,Bash,LS,Glob,Grep" in cmd
     assert "--resume" in cmd
     assert "sess-abc" in cmd
 
