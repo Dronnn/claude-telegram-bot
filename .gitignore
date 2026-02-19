@@ -2,6 +2,7 @@
 .env
 __pycache__/
 *.pyc
+.pytest_cache/
 .claude/
-docs/plans/
+docs/
 logs/
