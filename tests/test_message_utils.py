@@ -27,6 +27,7 @@ def test_split_on_newline():
     assert len(result) == 2
     for part in result:
         assert len(part) <= LIMIT
+        assert not part.startswith("\n")
 
 
 def test_long_single_line():
@@ -41,5 +42,7 @@ def test_preserves_all_content():
     lines = [f"Line {i}\n" for i in range(200)]
     text = "".join(lines)
     result = split_message(text, LIMIT)
-    reassembled = "".join(result)
+    # Newlines at split boundaries are consumed as separators,
+    # so rejoin with newline and verify no content lines are lost.
+    reassembled = "\n".join(result)
     assert reassembled == text

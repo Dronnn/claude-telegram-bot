@@ -17,8 +17,10 @@ def split_message(text: str, limit: int = TELEGRAM_MESSAGE_LIMIT) -> list[str]:
         cut = text.rfind("\n", 0, limit)
         if cut == -1:
             cut = limit  # Hard split
-
-        parts.append(text[:cut])
-        text = text[cut:]
+            parts.append(text[:cut])
+            text = text[cut:]
+        else:
+            parts.append(text[:cut])
+            text = text[cut + 1:]  # skip the newline
 
     return parts

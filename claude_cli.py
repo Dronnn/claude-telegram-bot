@@ -42,14 +42,19 @@ class ClaudeCLI:
         except (json.JSONDecodeError, KeyError):
             return raw.strip(), None
 
-    async def _execute(self, cmd: List[str]) -> Tuple[str, str]:
+    async def _execute(self, cmd: List[str], timeout: int = 300) -> Tuple[str, str]:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=self.work_dir,
         )
-        stdout, stderr = await proc.communicate()
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+        except asyncio.TimeoutError:
+            proc.kill()
+            await proc.communicate()
+            raise
         return stdout.decode(), stderr.decode()
 
     async def run(self, prompt: str, mode: Mode, session_id: Optional[str] = None) -> Tuple[str, Optional[str]]:

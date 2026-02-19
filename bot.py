@@ -20,6 +20,9 @@ BOT_TOKEN = os.environ["BOT_TOKEN"]
 ALLOWED_USER_ID = int(os.environ["ALLOWED_USER_ID"])
 WORK_DIR = os.environ["WORK_DIR"]
 
+if not os.path.isdir(WORK_DIR):
+    os.makedirs(WORK_DIR, exist_ok=True)
+
 cli = ClaudeCLI(work_dir=WORK_DIR)
 dp = Dispatcher()
 
@@ -35,7 +38,9 @@ class AuthMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        if isinstance(event, Message) and event.from_user.id != ALLOWED_USER_ID:
+        if isinstance(event, Message) and (
+            event.from_user is None or event.from_user.id != ALLOWED_USER_ID
+        ):
             return  # Silently ignore
         return await handler(event, data)
 
@@ -106,16 +111,20 @@ async def handle_message(message: Message) -> None:
 
     global current_session
     waiting = await message.answer("...")
-
-    text, session_id = await cli.run(message.text, current_mode, current_session)
-
-    if session_id:
-        current_session = session_id
-
-    await waiting.delete()
-
-    for part in split_message(text):
-        await message.answer(part)
+    try:
+        text, session_id = await cli.run(message.text, current_mode, current_session)
+        if session_id:
+            current_session = session_id
+        await waiting.delete()
+        if not text.strip():
+            text = "(empty response)"
+        for part in split_message(text):
+            await message.answer(part)
+    except asyncio.TimeoutError:
+        await waiting.edit_text("Timeout: CLI did not respond within 5 minutes.")
+    except Exception as e:
+        logging.exception("CLI error")
+        await waiting.edit_text(f"Error: {e}")
 
 
 async def main() -> None:

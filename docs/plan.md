@@ -22,4 +22,22 @@ Create `bot.py` — the main Telegram bot file using aiogram 3.x with auth middl
 
 - [x] Create `bot.py` with auth middleware, commands, and message handler
 - [x] Verify imports work via `.venv/bin/python`
-- [ ] Commit with clean message
+- [x] Commit with clean message
+
+---
+
+# Plan: Code Review Bug Fixes
+
+## Goal
+Fix critical and important bugs found during code review: subprocess timeout, error handling, message splitting newline consumption, auth null check, .env.example, and WORK_DIR validation.
+
+## Steps
+
+- [x] Fix 1: Add subprocess timeout to claude_cli.py `_execute`
+- [x] Fix 2: Add error handling (try/except) in bot.py `handle_message`
+- [x] Fix 3: Fix split_message newline consumption + update tests
+- [x] Fix 4: AuthMiddleware null check for `event.from_user`
+- [x] Fix 5: Update .env.example WORK_DIR
+- [x] Fix 6: Validate WORK_DIR at startup in bot.py
+- [x] Run all tests and verify they pass
+- [ ] Commit all fixes
