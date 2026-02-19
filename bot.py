@@ -8,7 +8,7 @@ from typing import Any, Optional
 from aiogram import BaseMiddleware, Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
-from aiogram.types import Message, TelegramObject
+from aiogram.types import BotCommand, Message, TelegramObject
 from dotenv import load_dotenv
 
 from claude_cli import ClaudeCLI, Mode, MODE_LABELS
@@ -29,6 +29,12 @@ dp = Dispatcher()
 # State
 current_mode = Mode.SAFE
 current_session: Optional[str] = None
+usage_stats = {
+    "total_cost_usd": 0.0,
+    "total_turns": 0,
+    "total_duration_ms": 0,
+    "request_count": 0,
+}
 
 
 class AuthMiddleware(BaseMiddleware):
@@ -58,7 +64,8 @@ async def cmd_start(message: Message) -> None:
         "/safe — режим только чтение\n"
         "/write — режим запись (Write + Edit)\n"
         "/full — полный доступ\n"
-        "/status — текущий статус"
+        "/status — текущий статус\n"
+        "/usage — статистика использования"
     )
 
 
@@ -94,6 +101,22 @@ async def cmd_full(message: Message) -> None:
     )
 
 
+@dp.message(Command("usage"))
+async def cmd_usage(message: Message) -> None:
+    cost = usage_stats["total_cost_usd"]
+    turns = usage_stats["total_turns"]
+    duration = usage_stats["total_duration_ms"]
+    requests = usage_stats["request_count"]
+    duration_min = duration / 60000
+    await message.answer(
+        f"Использование (с момента запуска бота):\n\n"
+        f"Запросов: {requests}\n"
+        f"Стоимость: ${cost:.4f}\n"
+        f"Ходов CLI: {turns}\n"
+        f"Время CLI: {duration_min:.1f} мин"
+    )
+
+
 @dp.message(Command("status"))
 async def cmd_status(message: Message) -> None:
     session_display = current_session[:12] + "..." if current_session else "нет"
@@ -112,9 +135,14 @@ async def handle_message(message: Message) -> None:
     global current_session
     waiting = await message.answer("...")
     try:
-        text, session_id = await cli.run(message.text, current_mode, current_session)
+        text, session_id, stats = await cli.run(message.text, current_mode, current_session)
         if session_id:
             current_session = session_id
+        if stats:
+            usage_stats["total_cost_usd"] += stats.get("cost_usd", 0)
+            usage_stats["total_turns"] += stats.get("num_turns", 0)
+            usage_stats["total_duration_ms"] += stats.get("duration_ms", 0)
+            usage_stats["request_count"] += 1
         await waiting.delete()
         if not text.strip():
             text = "(empty response)"
@@ -129,6 +157,14 @@ async def handle_message(message: Message) -> None:
 
 async def main() -> None:
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=None))
+    await bot.set_my_commands([
+        BotCommand(command="new", description="Новая сессия"),
+        BotCommand(command="safe", description="Режим: только чтение"),
+        BotCommand(command="write", description="Режим: запись (Write + Edit)"),
+        BotCommand(command="full", description="Режим: полный доступ"),
+        BotCommand(command="status", description="Текущий статус"),
+        BotCommand(command="usage", description="Статистика использования"),
+    ])
     await dp.start_polling(bot)
 
 

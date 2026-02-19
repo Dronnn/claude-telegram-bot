@@ -122,7 +122,7 @@ async def test_run_returns_text_and_session():
     mock_result = json.dumps({"result": "Hi!", "session_id": "s-1"})
 
     with patch.object(cli, "_execute", new_callable=AsyncMock, return_value=(mock_result, "")):
-        text, session_id = await cli.run("hello", mode=Mode.SAFE)
+        text, session_id, stats = await cli.run("hello", mode=Mode.SAFE)
         assert text == "Hi!"
         assert session_id == "s-1"
 
@@ -144,6 +144,8 @@ async def test_run_returns_text_from_json_list():
     ])
 
     with patch.object(cli, "_execute", new_callable=AsyncMock, return_value=(mock_result, "")):
-        text, session_id = await cli.run("hello", mode=Mode.SAFE)
+        text, session_id, stats = await cli.run("hello", mode=Mode.SAFE)
         assert text == "Hi from list!"
         assert session_id == "s-list"
+        assert stats["cost_usd"] == 0.02
+        assert stats["num_turns"] == 1

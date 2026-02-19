@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,21 @@ class ClaudeCLI:
             cmd += ["--resume", session_id]
 
         return cmd
+
+    def parse_stats(self, raw: str) -> Dict[str, Any]:
+        """Extract usage stats from CLI JSON response."""
+        stats = {}  # type: Dict[str, Any]
+        try:
+            data = json.loads(raw)
+            items = data if isinstance(data, list) else [data]
+            for item in items:
+                if isinstance(item, dict) and item.get("type") == "result":
+                    for key in ("cost_usd", "num_turns", "duration_ms", "duration_api_ms"):
+                        if key in item:
+                            stats[key] = item[key]
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return stats
 
     def parse_response(self, raw: str) -> Tuple[str, Optional[str]]:
         try:
@@ -93,7 +108,7 @@ class ClaudeCLI:
             raise
         return stdout.decode(), stderr.decode()
 
-    async def run(self, prompt: str, mode: Mode, session_id: Optional[str] = None) -> Tuple[str, Optional[str]]:
+    async def run(self, prompt: str, mode: Mode, session_id: Optional[str] = None) -> Tuple[str, Optional[str], Dict[str, Any]]:
         cmd = self.build_command(mode, session_id)
         stdout, stderr = await self._execute(cmd, stdin_data=prompt)
 
@@ -101,6 +116,8 @@ class ClaudeCLI:
         logger.debug("CLI stderr: %s", stderr[:500])
 
         if not stdout.strip() and stderr.strip():
-            return f"Error: {stderr.strip()}", session_id
+            return f"Error: {stderr.strip()}", session_id, {}
 
-        return self.parse_response(stdout)
+        text, sid = self.parse_response(stdout)
+        stats = self.parse_stats(stdout)
+        return text, sid, stats
