@@ -24,7 +24,7 @@ class ClaudeCLI:
     def __init__(self, work_dir: str):
         self.work_dir = work_dir
 
-    def build_command(self, prompt: str, mode: Mode, session_id: Optional[str] = None) -> List[str]:
+    def build_command(self, mode: Mode, session_id: Optional[str] = None) -> List[str]:
         cmd = ["claude", "-p", "--output-format", "json"]
 
         if mode == Mode.WRITE:
@@ -35,7 +35,6 @@ class ClaudeCLI:
         if session_id:
             cmd += ["--resume", session_id]
 
-        cmd.append(prompt)
         return cmd
 
     def parse_response(self, raw: str) -> Tuple[str, Optional[str]]:
@@ -77,15 +76,17 @@ class ClaudeCLI:
         except (json.JSONDecodeError, KeyError, TypeError):
             return raw.strip(), None
 
-    async def _execute(self, cmd: List[str], timeout: int = 300) -> Tuple[str, str]:
+    async def _execute(self, cmd: List[str], stdin_data: Optional[str] = None, timeout: int = 300) -> Tuple[str, str]:
         proc = await asyncio.create_subprocess_exec(
             *cmd,
+            stdin=asyncio.subprocess.PIPE if stdin_data else None,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=self.work_dir,
         )
         try:
-            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+            stdin_bytes = stdin_data.encode() if stdin_data else None
+            stdout, stderr = await asyncio.wait_for(proc.communicate(input=stdin_bytes), timeout=timeout)
         except asyncio.TimeoutError:
             proc.kill()
             await proc.communicate()
@@ -93,8 +94,8 @@ class ClaudeCLI:
         return stdout.decode(), stderr.decode()
 
     async def run(self, prompt: str, mode: Mode, session_id: Optional[str] = None) -> Tuple[str, Optional[str]]:
-        cmd = self.build_command(prompt, mode, session_id)
-        stdout, stderr = await self._execute(cmd)
+        cmd = self.build_command(mode, session_id)
+        stdout, stderr = await self._execute(cmd, stdin_data=prompt)
 
         logger.debug("CLI stdout: %s", stdout[:500])
         logger.debug("CLI stderr: %s", stderr[:500])

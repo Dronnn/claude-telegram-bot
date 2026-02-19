@@ -14,13 +14,13 @@ def test_mode_enum():
 
 def test_build_command_safe_no_session():
     cli = ClaudeCLI(work_dir="/tmp/test")
-    cmd = cli.build_command("hello", mode=Mode.SAFE, session_id=None)
-    assert cmd == ["claude", "-p", "--output-format", "json", "hello"]
+    cmd = cli.build_command(mode=Mode.SAFE, session_id=None)
+    assert cmd == ["claude", "-p", "--output-format", "json"]
 
 
 def test_build_command_write_mode():
     cli = ClaudeCLI(work_dir="/tmp/test")
-    cmd = cli.build_command("hello", mode=Mode.WRITE, session_id=None)
+    cmd = cli.build_command(mode=Mode.WRITE, session_id=None)
     assert "--allowedTools" in cmd
     assert "Write" in cmd
     assert "Edit" in cmd
@@ -28,13 +28,13 @@ def test_build_command_write_mode():
 
 def test_build_command_full_mode():
     cli = ClaudeCLI(work_dir="/tmp/test")
-    cmd = cli.build_command("hello", mode=Mode.FULL, session_id=None)
+    cmd = cli.build_command(mode=Mode.FULL, session_id=None)
     assert "--dangerously-skip-permissions" in cmd
 
 
 def test_build_command_with_session():
     cli = ClaudeCLI(work_dir="/tmp/test")
-    cmd = cli.build_command("hello", mode=Mode.SAFE, session_id="abc-123")
+    cmd = cli.build_command(mode=Mode.SAFE, session_id="abc-123")
     assert "--resume" in cmd
     assert "abc-123" in cmd
 
