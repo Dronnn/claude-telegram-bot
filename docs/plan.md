@@ -40,4 +40,18 @@ Fix critical and important bugs found during code review: subprocess timeout, er
 - [x] Fix 5: Update .env.example WORK_DIR
 - [x] Fix 6: Validate WORK_DIR at startup in bot.py
 - [x] Run all tests and verify they pass
-- [ ] Commit all fixes
+- [x] Commit all fixes
+
+---
+
+# Plan: Fix parse_response JSON list bug
+
+## Goal
+Fix `parse_response` in `claude_cli.py` which crashes with `AttributeError: 'list' object has no attribute 'get'` because `claude -p --output-format json` returns a JSON array, not a JSON object.
+
+## Steps
+
+- [x] Investigate actual JSON format from `claude -p --output-format json`
+- [x] Fix `parse_response` to handle the actual format
+- [x] Update tests to cover the list format
+- [x] Run tests and commit
