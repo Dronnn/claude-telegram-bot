@@ -39,14 +39,14 @@ class AuthMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        if isinstance(event, Message) and (
-            event.from_user is None or event.from_user.id != ALLOWED_USER_ID
-        ):
+        user = getattr(event, "from_user", None)
+        if user is None or user.id != ALLOWED_USER_ID:
             return  # Silently ignore
         return await handler(event, data)
 
 
 dp.message.middleware(AuthMiddleware())
+dp.callback_query.middleware(AuthMiddleware())
 
 
 @dp.message(Command("start"))
